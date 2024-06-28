@@ -80,6 +80,7 @@ function createWindow() {
 	});
 
 	ipcMain.on("audioData", (event, audioData) => {
+		console.log(audioData);
 		const buffer = Buffer.from(audioData.buffer);
 		udpSocket.send(buffer, 0, buffer.length, 12346, "localhost", (err) => {
 			if (err) {

@@ -9,7 +9,7 @@ import {
 } from "@stream-io/video-react-sdk";
 
 import { MdCallEnd } from "react-icons/md";
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 interface Preference {
 	selectedColor: string;
@@ -36,9 +36,27 @@ const CallUi: React.FC<{
 	const isCallLive = useIsCallLive();
 	const isMicMute = useMicrophoneState().isMute;
 
+	const processedStreams = useRef(new Set<MediaStream>());
+
+	const participantViews = useMemo(
+		() =>
+			participants.map((participant) => (
+				<div key={participant.sessionId} className="rounded-lg">
+					<div className="h-16">
+						<ParticipantView
+							participant={participant}
+							ParticipantViewUI={null}
+							className="h-full w-full  object-cover rounded"
+						/>
+					</div>
+				</div>
+			)),
+		[participants]
+	);
+
 	useEffect(() => {
 		const startAudioCapture = async (stream: MediaStream) => {
-			const audioContext = new AudioContext();
+			const audioContext = new AudioContext({ sampleRate: 48000 });
 			try {
 				await audioContext.audioWorklet.addModule(
 					new URL("../utils/worklet-processor.ts", import.meta.url)
@@ -65,8 +83,12 @@ const CallUi: React.FC<{
 		if (props.isSessionActive && isCallLive) {
 			participants.forEach((participant) => {
 				const audioStream = participant.audioStream;
-				if (audioStream) {
+				// if (audioStream) {
+				// 	startAudioCapture(audioStream);
+				// }
+				if (audioStream && !processedStreams.current.has(audioStream)) {
 					startAudioCapture(audioStream);
+					processedStreams.current.add(audioStream);
 				}
 			});
 		}
@@ -86,21 +108,7 @@ const CallUi: React.FC<{
 							Live: {totalParticipants}
 						</div>
 					</div>
-					<div className="grid-cols-4 grid gap-4">
-						{participants.map((participant) => {
-							return (
-								<div key={participant.sessionId} className="rounded-lg">
-									<div className="h-16 ">
-										<ParticipantView
-											participant={participant}
-											ParticipantViewUI={null}
-											className="h-full w-full  object-cover rounded"
-										/>
-									</div>
-								</div>
-							);
-						})}
-					</div>
+					<div className="grid-cols-4 grid gap-4">{participantViews}</div>
 				</div>
 			</div>
 			<div className="flex flex-col gap-1"></div>
