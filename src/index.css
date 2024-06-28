@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	body {
+		@apply bg-neutral-950;
+	}
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6,
+	div,
+	p {
+		@apply text-white;
+	}
+
+	input {
+		@apply p-4 bg-neutral-800 border border-white/5 rounded-lg;
+	}
+
+	label {
+		@apply mb-2;
+	}
+
+	button {
+		@apply p-4 bg-neutral-800 rounded-lg disabled:opacity-40;
+	}
+
+	select {
+		@apply p-2 bg-neutral-800 border border-white/5 rounded-lg focus:outline-blue-500;
+	}
+}
+
+.str-video__video-placeholder {
+	@apply relative;
+}
+
+.str-video__video-placeholder__avatar {
+	@apply !h-full !rounded;
+}
+
+.str-video__video {
+	@apply !rounded;
+}
