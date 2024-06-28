@@ -68,7 +68,9 @@ function createWindow() {
 	// Listen for messages on UDP socket
 	udpSocket.on("message", (msg, rinfo) => {
 		// console.log(`UDP message received from ${rinfo.address}:${rinfo.port}`);
+		// console.log(msg);
 		const audioData = new Float32Array(msg.buffer);
+		// console.log(audioData);
 		win?.webContents.send("udp-audio-data", audioData);
 		// Process incoming audio data here
 	});
@@ -80,9 +82,10 @@ function createWindow() {
 	});
 
 	ipcMain.on("audioData", (event, audioData) => {
-		console.log(audioData);
+		// console.log(audioData);
 		const buffer = Buffer.from(audioData.buffer);
-		udpSocket.send(buffer, 0, buffer.length, 12346, "localhost", (err) => {
+		const ipAddress = "127.0.0.1";
+		udpSocket.send(buffer, 0, buffer.length, 12346, ipAddress, (err) => {
 			if (err) {
 				console.error("Error Sending UDP data: ", err);
 			}

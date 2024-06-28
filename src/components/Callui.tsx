@@ -37,6 +37,10 @@ const CallUi: React.FC<{
 	const isMicMute = useMicrophoneState().isMute;
 
 	const processedStreams = useRef(new Set<MediaStream>());
+	const audioContextRef = useRef<AudioContext | null>(null);
+	const audioWorkletNodes = useRef<Map<MediaStream, AudioWorkletNode>>(
+		new Map()
+	);
 
 	const participantViews = useMemo(
 		() =>
@@ -56,25 +60,38 @@ const CallUi: React.FC<{
 
 	useEffect(() => {
 		const startAudioCapture = async (stream: MediaStream) => {
-			const audioContext = new AudioContext({ sampleRate: 48000 });
+			if (!audioContextRef.current) {
+				audioContextRef.current = new AudioContext();
+			}
+			const audioContext = audioContextRef.current;
+
 			try {
-				await audioContext.audioWorklet.addModule(
-					new URL("../utils/worklet-processor.ts", import.meta.url)
-				);
-				const audioSource = audioContext.createMediaStreamSource(stream);
+				if (audioContext.state === "suspended") {
+					await audioContext.resume();
+				}
 
-				const audioWorkletNode = new AudioWorkletNode(
-					audioContext,
-					"audio-processor"
-				);
+				if (!processedStreams.current.has(stream)) {
+					await audioContext.audioWorklet.addModule(
+						new URL("../utils/worklet-processor.ts", import.meta.url)
+					);
 
-				audioWorkletNode.port.onmessage = (evt) => {
-					const audioData = evt.data;
-					window.ipcRenderer.send("audioData", audioData);
-				};
+					const audioSource = audioContext.createMediaStreamSource(stream);
+					const audioWorkletNode = new AudioWorkletNode(
+						audioContext,
+						"audio-processor"
+					);
 
-				audioSource.connect(audioWorkletNode);
-				audioWorkletNode.connect(audioContext.destination);
+					audioWorkletNode.port.onmessage = (evt) => {
+						const audioData = evt.data;
+						window.ipcRenderer.send("audioData", audioData);
+					};
+
+					audioSource.connect(audioWorkletNode);
+					audioWorkletNode.connect(audioContext.destination);
+
+					processedStreams.current.add(stream);
+					audioWorkletNodes.current.set(stream, audioWorkletNode);
+				}
 			} catch (error) {
 				console.log(error);
 			}
@@ -92,7 +109,37 @@ const CallUi: React.FC<{
 				}
 			});
 		}
+
+		return () => {
+			// Cleanup on component unmount or dependency change
+			processedStreams.current.clear();
+			audioWorkletNodes.current.forEach((node) => {
+				node.port.close();
+				node.disconnect();
+			});
+			audioWorkletNodes.current.clear();
+			if (audioContextRef.current) {
+				audioContextRef.current.close();
+				audioContextRef.current = null;
+			}
+		};
 	}, [props.isSessionActive, isCallLive, participants]);
+
+	useEffect(() => {
+		if (!props.isSessionActive || !isCallLive) {
+			// Cleanup when session is inactive or call is not live
+			processedStreams.current.clear();
+			audioWorkletNodes.current.forEach((node) => {
+				node.port.close();
+				node.disconnect();
+			});
+			audioWorkletNodes.current.clear();
+			if (audioContextRef.current) {
+				audioContextRef.current.close();
+				audioContextRef.current = null;
+			}
+		}
+	}, [props.isSessionActive, isCallLive]);
 
 	return (
 		<main>
