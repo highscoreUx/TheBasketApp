@@ -31,7 +31,7 @@ let win: BrowserWindow | null;
 
 function createWindow() {
 	win = new BrowserWindow({
-		icon: path.join(process.env.VITE_PUBLIC, "BasketIcon.svg"),
+		icon: path.join(process.env.VITE_PUBLIC, "icon.ico"),
 		backgroundColor: "black",
 		width: 1200,
 		height: 800,
