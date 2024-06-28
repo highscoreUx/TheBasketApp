@@ -67,20 +67,21 @@ function createWindow() {
 
 	// Listen for messages on UDP socket
 	udpSocket.on("message", (msg, rinfo) => {
-		console.log(
-			`UDP message received from ${rinfo.address}:${rinfo.port}: ${msg}`
-		);
+		// console.log(`UDP message received from ${rinfo.address}:${rinfo.port}`);
+		const audioData = new Float32Array(msg.buffer);
+		win?.webContents.send("udp-audio-data", audioData);
 		// Process incoming audio data here
 	});
 
-	// Bind UDP socket to a port (e.g., 12345)
+	// Bind UDP socket to a port (e.g., 12346)
 	udpSocket.bind(12345, () => {
 		console.log("UDP socket is listening on port 12345");
+		udpSocket.setBroadcast(true);
 	});
 
 	ipcMain.on("audioData", (event, audioData) => {
 		const buffer = Buffer.from(audioData.buffer);
-		udpSocket.send(buffer, 0, buffer.length, 12345, "localhost", (err) => {
+		udpSocket.send(buffer, 0, buffer.length, 12346, "localhost", (err) => {
 			if (err) {
 				console.error("Error Sending UDP data: ", err);
 			}
