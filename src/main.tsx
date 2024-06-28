@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import App from "./App";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import PreferenceContext from "./contexts/PreferenceContext";
 import AuthContext from "./contexts/AuthContext";
 import BridgeCallContext from "./contexts/BridgeCallContext";
@@ -12,11 +12,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 		<PreferenceContext>
 			<AuthContext>
 				<BridgeCallContext>
-					<BrowserRouter>
+					<HashRouter>
 						<Routes>
 							<Route path="/" element={<App />} />
 						</Routes>
-					</BrowserRouter>
+					</HashRouter>
 				</BridgeCallContext>
 			</AuthContext>
 		</PreferenceContext>
